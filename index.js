@@ -112,6 +112,69 @@ async function addNewRole() {
     }
 }
 
+async function addNewEmployee() {
+    try {
+        // Fetch all roles and employees
+        const [roles] = await db.promise().query("SELECT * FROM role");
+        const [employees] = await db.promise().query("SELECT * FROM employee");
+
+        // If no roles exist, return to main menu
+        if (!roles.length) {
+            console.error("No roles found. Add roles first.");
+            return start();
+        }
+
+        const answers = await inquirer.prompt([
+            {
+                type: "input",
+                name: "firstName",
+                message: "What is the employee's first name?"
+            },
+            {
+                type: "input",
+                name: "lastName",
+                message: "What is the employee's last name?"
+            },
+            {
+                type: "list",
+                name: "roleName",
+                message: "What is the employee's role?",
+                choices: roles.map(role => role.title)
+            },
+            {
+                type: "list",
+                name: "managerName",
+                message: "Select the employee's manager (if any):",
+                choices: ["None", ...employees.map(employee => `${employee.first_name} ${employee.last_name}`)]
+            }
+        ]);
+
+        // Find the ID of the selected role
+        const role = roles.find(r => r.title === answers.roleName);
+        let managerId = null;
+
+        // If a manager was selected (and it wasn't "None"), find their ID
+        if (answers.managerName !== "None") {
+            const manager = employees.find(employee => `${employee.first_name} ${employee.last_name}` === answers.managerName);
+            managerId = manager.id;
+        }
+
+        // Insert new employee into the database
+        await db.promise().query(
+            "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)",
+            [answers.firstName, answers.lastName, role.id, managerId]
+        );
+
+        console.log(`Added new employee: ${answers.firstName} ${answers.lastName}`);
+        mainPrompt();
+
+    } catch (err) {
+        console.error(err);
+        mainPrompt();
+    }
+}
+
+
 function mainPrompt() {
     inquirer.prompt([
         {
@@ -146,11 +209,11 @@ function mainPrompt() {
             case "Add a role":
                 addNewRole();
                 break;
-            case "Add a employee":
+            case "Add an employee":
                 addNewEmployee();
                 break;
-            case "Add a department":
-                addDepartment();
+            case "Update an employee role":
+                updateEmployeeRole();
                 break;
             case "Exit":
                 db.end();
