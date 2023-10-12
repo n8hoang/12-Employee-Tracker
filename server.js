@@ -4,6 +4,9 @@ const app = express();
 require('dotenv').config()
 const PORT = process.env.PORT || 3001;
 
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 const db = mysql.createConnection({
     host: 'localhost',
     user: process.env.DB_USER,
