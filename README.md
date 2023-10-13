@@ -20,6 +20,7 @@ npm i
 ## Usage
 
 To use run node index.js
+[Demo Video](https://drive.google.com/file/d/1hW8xocDlcbYyQEH_oFsurz6BmV53O_G0/view)
 
 ## License
 
