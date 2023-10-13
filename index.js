@@ -17,7 +17,7 @@ db.connect(err => {
 });
 
 function viewAllDepartments() {
-    const query = "SELECT * FROM department";
+    const query = "SELECT department.id, department.name as department_Name FROM department";
     db.query(query, (err, res) => {
         if (err) throw err;
         console.table(res);
@@ -26,7 +26,15 @@ function viewAllDepartments() {
 }
 
 function viewAllRoles() {
-    const query = "SELECT * FROM role";
+    const query = `
+    SELECT role.id AS 'Role ID',
+           role.title AS 'Role Title',
+           role.salary AS Salary,
+           department.name AS 'Department Name'
+    FROM role
+    JOIN department ON role.department_id = department.id
+    ORDER BY role.id;
+`;
     db.query(query, (err, res) => {
         if (err) throw err;
         console.table(res);
@@ -35,7 +43,20 @@ function viewAllRoles() {
 }
 
 function viewAllEmployees() {
-    const query = "SELECT * FROM employee";
+    const query = `
+    SELECT emp.id AS 'Employee ID',
+           emp.first_name AS 'First Name',
+           emp.last_name AS 'Last Name',
+           role.title AS 'Role Title',
+           role.salary AS Salary,
+           department.name AS 'Department Name',
+           CONCAT(mgr.first_name, ' ', mgr.last_name) AS 'Manager Name'
+    FROM employee emp
+    LEFT JOIN role ON emp.role_id = role.id
+    LEFT JOIN department ON role.department_id = department.id
+    LEFT JOIN employee mgr ON emp.manager_id = mgr.id
+    ORDER BY emp.id;
+`;
     db.query(query, (err, res) => {
         if (err) throw err;
         console.table(res);
@@ -57,6 +78,7 @@ function addNewDepartment() {
         );
     });
 }
+
 async function addNewRole() {
     try {
         const [departments] = await db.promise().query("SELECT * FROM department");
@@ -166,6 +188,52 @@ async function addNewEmployee() {
         );
 
         console.log(`Added new employee: ${answers.firstName} ${answers.lastName}`);
+        mainPrompt();
+
+    } catch (err) {
+        console.error(err);
+        mainPrompt();
+    }
+}
+
+async function updateEmployeeRole() {
+    try {
+        // Fetch all roles and employees
+        const [roles] = await db.promise().query("SELECT * FROM role");
+        const [employees] = await db.promise().query("SELECT * FROM employee");
+
+        // If no employees or roles exist, return to main menu
+        if (!employees.length || !roles.length) {
+            console.error("Employees or roles are missing.");
+            return start();
+        }
+
+        const answers = await inquirer.prompt([
+            {
+                type: "list",
+                name: "employeeName",
+                message: "Select the employee whose role you want to update:",
+                choices: employees.map(employee => `${employee.first_name} ${employee.last_name}`)
+            },
+            {
+                type: "list",
+                name: "newRole",
+                message: "Select the new role for the employee:",
+                choices: roles.map(role => role.title)
+            }
+        ]);
+
+        // Extract IDs for the employee and role based on the selected names
+        const employee = employees.find(emp => `${emp.first_name} ${emp.last_name}` === answers.employeeName);
+        const role = roles.find(r => r.title === answers.newRole);
+
+        // Update the employee's role in the database
+        await db.promise().query(
+            "UPDATE employee SET role_id = ? WHERE id = ?",
+            [role.id, employee.id]
+        );
+
+        console.log(`Updated role for ${answers.employeeName} to ${answers.newRole}`);
         mainPrompt();
 
     } catch (err) {
