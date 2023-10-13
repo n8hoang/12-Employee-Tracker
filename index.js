@@ -1,9 +1,11 @@
+// Required modules
 const inquirer = require('inquirer');
 const mysql = require('mysql2');
 require('dotenv').config()
+// Port settings
 const PORT = process.env.PORT || 3001;
 
-
+// Set up the database connection
 const db = mysql.createConnection({
     host: 'localhost',
     user: process.env.DB_USER,
@@ -11,11 +13,13 @@ const db = mysql.createConnection({
     database: process.env.DB_DATABASE
 });
 
+// Connect to the database and initiate the main menu prompt
 db.connect(err => {
     if (err) throw err;
     mainPrompt();
 });
 
+// Function to view all departments
 function viewAllDepartments() {
     const query = "SELECT department.id, department.name as department_Name FROM department";
     db.query(query, (err, res) => {
@@ -25,6 +29,7 @@ function viewAllDepartments() {
     });
 }
 
+// Function to view all roles
 function viewAllRoles() {
     const query = `
     SELECT role.id AS 'Role ID',
@@ -42,6 +47,7 @@ function viewAllRoles() {
     });
 }
 
+// Function to view all employees
 function viewAllEmployees() {
     const query = `
     SELECT emp.id AS 'Employee ID',
@@ -64,6 +70,7 @@ function viewAllEmployees() {
     });
 }
 
+// Function to add a new department
 function addNewDepartment() {
     inquirer.prompt({
         type: "input",
@@ -79,15 +86,17 @@ function addNewDepartment() {
     });
 }
 
+// Function to add a new role
 async function addNewRole() {
     try {
+        // Fetch all departments
         const [departments] = await db.promise().query("SELECT * FROM department");
-
+        // Check if there are any departments
         if (!departments.length) {
             console.error("No departments found.");
             return start();
         }
-
+        // Prompt user to provide details for the new role
         const answer = await inquirer.prompt([
             {
                 type: "input",
@@ -112,14 +121,14 @@ async function addNewRole() {
                 choices: departments.map(department => department.name)
             }
         ]);
-
+        // Find the corresponding department based on the user's selection
         const department = departments.find(dept => dept.name === answer.departmentName);
-
+        // If no matching department is found, return to the main menu
         if (!department) {
             console.error("Matching department not found.");
             return mainPrompt();
         }
-
+        // Insert the new role into the database
         await db.promise().query(
             "INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)",
             [answer.roleTitle, parseFloat(answer.roleSalary), department.id]
@@ -129,11 +138,12 @@ async function addNewRole() {
         mainPrompt();
 
     } catch (err) {
+        // Handle errors and return to the main menu
         console.error(err);
         mainPrompt();
     }
 }
-
+// Function to add a new employee
 async function addNewEmployee() {
     try {
         // Fetch all roles and employees
@@ -242,7 +252,7 @@ async function updateEmployeeRole() {
     }
 }
 
-
+// Main prompt that serves as the application's menu
 function mainPrompt() {
     inquirer.prompt([
         {
@@ -261,6 +271,7 @@ function mainPrompt() {
             ]
         }
     ]).then(answer => {
+        // Handle user's action based on their choice
         switch (answer.action) {
             case "View all departments":
                 viewAllDepartments();
