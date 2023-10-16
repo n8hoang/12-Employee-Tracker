@@ -2,15 +2,16 @@
 const inquirer = require('inquirer');
 const mysql = require('mysql2');
 require('dotenv').config()
+
 // Port settings
 const PORT = process.env.PORT || 3001;
 
 // Set up the database connection
 const db = mysql.createConnection({
     host: 'localhost',
-    user: process.env.DB_USER,
-    password: process.env.DB_PASS,
-    database: process.env.DB_DATABASE
+    user: 'root',
+    password: 'password',
+    database: 'company_db'
 });
 
 // Connect to the database and initiate the main menu prompt
