@@ -17,6 +17,7 @@ const db = mysql.createConnection({
 // Connect to the database and initiate the main menu prompt
 db.connect(err => {
     if (err) throw err;
+    console.log("Connected")
     mainPrompt();
 });
 
