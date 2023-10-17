@@ -18,7 +18,7 @@ This is a command line application that allows you to manage a company's employe
 npm i
 
 ## Usage
-
+To create and seed database copy the SQL code in schema.sql and seeds.sql and run them in the MySQL workbench.
 To use run node index.js
 [Demo Video](https://drive.google.com/file/d/1hW8xocDlcbYyQEH_oFsurz6BmV53O_G0/view)
 
